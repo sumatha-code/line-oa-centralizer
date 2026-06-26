@@ -119,10 +119,23 @@ export default function AccountsPage() {
 
   const columns = [
     {
-      title: "ชื่อบัญชี",
-      dataIndex: "name",
+      title: "ชื่อบัญชี / System ID (UUID)",
       key: "name",
-      className: "text-white font-semibold",
+      render: (_: any, record: LineAccount) => (
+        <div>
+          <div className="text-white font-semibold">{record.name}</div>
+          <div className="text-zinc-500 text-[10px] font-mono select-all flex items-center gap-1 mt-0.5" style={{ lineHeight: "normal" }}>
+            UUID: {record.id}
+            <Button
+              type="text"
+              size="small"
+              icon={<CopyOutlined style={{ fontSize: "9px" }} />}
+              onClick={() => copyToClipboard(record.id)}
+              className="text-zinc-500 hover:text-line p-0 h-auto flex items-center border-none bg-transparent"
+            />
+          </div>
+        </div>
+      ),
     },
     {
       title: "Basic ID / Channel ID",

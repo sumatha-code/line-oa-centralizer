@@ -314,7 +314,7 @@ export default function ApiKeysPage() {
   -H "Content-Type: application/json" \\
   -H "X-EDUC-Hub-Token: YOUR_API_KEY" \\
   -d '{
-    "lineAccountId": "ไอดีบัญชี LINE (คัดลอกจากตาราง LINE Accounts)",
+    "lineAccountId": "System UUID ของ LINE Account (ไม่ใช่ Basic/Channel ID คัดลอกได้จากใต้ชื่อบัญชีในหน้า LINE Accounts)",
     "to": "LINE_USER_ID_ผู้รับ (ขึ้นต้นด้วย Uxxxxxxxx)",
     "messages": [
       {
@@ -341,7 +341,7 @@ const sendNotification = async () => {
         "X-EDUC-Hub-Token": "YOUR_API_KEY" // ระบุ API Key ที่ได้จากระบบ
       },
       body: JSON.stringify({
-        lineAccountId: "ไอดีบัญชี LINE (คัดลอกจากตาราง LINE Accounts)",
+        lineAccountId: "System UUID ของ LINE Account (ไม่ใช่ Basic/Channel ID คัดลอกได้จากใต้ชื่อบัญชีในหน้า LINE Accounts)",
         to: "LINE_USER_ID_ผู้รับ (เช่น U1234567890abcdef...)",
         messages: [
           {
@@ -374,7 +374,7 @@ headers = {
     "X-EDUC-Hub-Token": "YOUR_API_KEY"
 }
 payload = {
-    "lineAccountId": "ไอดีบัญชี LINE (คัดลอกจากตาราง LINE Accounts)",
+    "lineAccountId": "System UUID ของ LINE Account (ไม่ใช่ Basic/Channel ID คัดลอกได้จากใต้ชื่อบัญชีในหน้า LINE Accounts)",
     "to": "LINE_USER_ID_ผู้รับ (เช่น U1234567890abcdef...)",
     "messages": [
         {
