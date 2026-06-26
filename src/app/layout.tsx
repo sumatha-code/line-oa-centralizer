@@ -7,8 +7,8 @@ import React from "react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LINE API EDUC Center",
-  description: "Central Webhook & API Gateway for Faculty of Education, Silpakorn University",
+  title: "Line OA Centralizer",
+  description: "Central Webhook & API Gateway for LINE Official Accounts",
 };
 
 export default function RootLayout({

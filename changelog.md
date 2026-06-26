@@ -2,6 +2,25 @@
 
 All notable changes to the LINE API & Webhook Gateway project will be documented in this file.
 
+## [0.2.0] - 2026-06-26
+
+### Added
+- **Production Deployment & Scaling:** ดำเนินการติดตั้งระบบเสร็จสมบูรณ์บนเซิร์ฟเวอร์ `line-api-manager` โดยใช้ Docker Compose รัน Worker ทั้งหมด 4 Replicas สำหรับกระจายโหลดงาน Webhook ขนานกัน
+- **Interactive UI User Guides:** เพิ่มคู่มือและตัวอย่างซอร์สโค้ดในการส่งข้อความผ่าน API แบบอิงโฮสต์จริงและอัปเดตแบบเรียลไทม์ (cURL, Node.js, Python) เข้าในหน้าจอจัดการ API Keys และขั้นตอนเชื่อม Webhook ในหน้าจอ LINE Accounts
+- **Reverse Proxy Support:** ปรับตั้งค่าความเข้ากันได้ของการทำงานหลังระบบ Cloudflared Reverse Proxy (เปิดใช้งาน `TRUST_HOST=true` เพื่อขจัดปัญหา Google OAuth Redirect URI Mismatch)
+- **Multi-destination Webhook Forwarding:** เพิ่มตาราง `line_account_forward_urls` และระบบเวิร์กเกอร์ในการส่ง Payload ไปยังบอทปลายทางพร้อมกันหลายเว็บแบบขนาน (Promise.allSettled)
+- **UI & Layout Hotfixes:** ปรับแก้การจัดกึ่งกลางแนวตั้งบน Topbar (ขจัดปัญหาบักชื่อลอยหลุดจาก Header) และเพิ่มคุณสมบัติ scroll แนวนอนให้กับตารางสรุปผลหลักทั้งหมดเพื่อความพร้อมใช้งานบนอุปกรณ์แท็บเล็ต
+
+### Changed
+- **Worker Execution Context:** เปลี่ยนเอนจิ้นรันสคริปต์ Worker ใน Dockerfile จาก `ts-node` เป็น `tsx` เพื่อหลีกเลี่ยงปัญหาตัวอ่านไฟล์ TypeScript (ESM module loader error)
+- **Database URL Security Compliance:** ทำการเข้ารหัสแบบ URL-encoded กับรหัสผ่านที่มีอักขระพิเศษ (เช่น `@` แปลงเป็น `%40`) เพื่อป้องกัน Drizzle Kit ทำการเชื่อมต่อล้มเหลว
+- **Security Sanitizations:** ลบความลับและรหัสผ่านระบบจริงออกจากเอกสารประกอบและ `.env.example` ทั้งหมดเพื่อความมั่นคงปลอดภัย (Security Best Practices)
+
+### Document Updates
+- บันทึกปัญหาการติดตั้งและข้อแก้ไขเชิงเทคนิคลงใน [Gotchas.md](file:///d:/Project/Line%20API%20EDUC%20Center/docs/Gotchas.md)
+- ปรับปรุงคู่มือแผนงานความคืบหน้าโครงการใน [Roadmap.md](file:///d:/Project/Line%20API%20EDUC%20Center/docs/Roadmap.md)
+- ปรับรายละเอียดโครงสร้างเครือข่ายและการเซ็ตอัพใน [Architecture.md](file:///d:/Project/Line%20API%20EDUC%20Center/docs/Architecture.md)
+
 ## [0.1.0] - 2026-06-26
 
 ### Added

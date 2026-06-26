@@ -69,6 +69,8 @@ export const webhookEvents = pgTable(
       .notNull()
       .references(() => lineAccounts.id, { onDelete: "cascade" }),
     eventType: varchar("event_type", { length: 100 }).notNull(), // message, follow, join, etc.
+    userId: varchar("user_id", { length: 100 }),
+    groupId: varchar("group_id", { length: 100 }),
     processedAt: timestamp("processed_at").defaultNow().notNull(),
   },
   (table) => ({
@@ -123,5 +125,22 @@ export const usageLogs = pgTable(
     apiKeyIdIdx: index("usage_logs_api_key_id_idx").on(table.apiKeyId),
     lineAccountIdIdx: index("usage_logs_line_account_id_idx").on(table.lineAccountId),
     createdAtIdx: index("usage_logs_created_at_idx").on(table.createdAt),
+  })
+);
+
+// 10. Webhook Forward URLs (1-to-N relation)
+export const lineAccountForwardUrls = pgTable(
+  "line_account_forward_urls",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    lineAccountId: uuid("line_account_id")
+      .notNull()
+      .references(() => lineAccounts.id, { onDelete: "cascade" }),
+    url: varchar("url", { length: 1024 }).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    lineAccountIdIdx: index("line_account_forward_urls_line_account_id_idx").on(table.lineAccountId),
   })
 );

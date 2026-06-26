@@ -93,10 +93,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         <div className="h-16 flex items-center px-6 gap-3 border-b border-dark-border">
           <span className="w-8 h-8 rounded-full bg-line flex items-center justify-center text-white text-xs font-bold">
-            EDUC
+            LOAC
           </span>
           <span className="text-white font-bold text-sm tracking-wide">
-            API Gateway
+            OA Centralizer
           </span>
         </div>
         <Menu

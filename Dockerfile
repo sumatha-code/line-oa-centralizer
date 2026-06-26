@@ -37,4 +37,4 @@ COPY . .
 # We can use ts-node in production or build a standalone js for worker.
 # Since it runs in docker alpine, we can compile worker or just use ts-node.
 # Let's run with ts-node for TypeScript execution inside worker container.
-CMD ["npx", "ts-node", "src/worker/index.ts"]
+CMD ["npx", "tsx", "src/worker/index.ts"]

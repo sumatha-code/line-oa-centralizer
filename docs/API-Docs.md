@@ -1,8 +1,13 @@
 # Internal API & Webhook Specifications
 
+## 🌐 Base URL (Production)
+* `https://line-api.educ-su.work`
+
+---
+
 ## 1. Webhook Endpoint (จาก LINE OA)
 * **Endpoint:** `POST /api/webhooks/line/[accountId]`
-* **Description:** สำหรับให้ LINE OA ยิง Webhook เข้ามาเก็บข้อมูลและประมวลผลต่อ โดยระบบกลางจะนำ `accountId` ไปค้นหารายละเอียด Channel Secret ในฐานข้อมูลมาทำการตรวจสอบ `x-line-signature` และบันทึกข้อมูลก่อนจัดลงคิว
+* **Description:** สำหรับให้ LINE OA ยิง Webhook เข้ามาประมวลผลต่อ โดยระบบกลางจะนำ `accountId` ไปหา Channel Secret มาทำการตรวจสอบ `x-line-signature` บันทึกข้อมูลและประวัติลงฐานข้อมูล (รวมถึงเก็บค่า `userId` และ `groupId` ของอีเวนต์ล่าสุด) ก่อนจัดลงคิว Redis เพื่อให้ Queue Worker ช่วยคัดเลือกส่งต่อ (Forward) payload แบบขนานไปยังผู้ให้บริการแชทบอทของระบบย่อยทั้งหมดที่ลงทะเบียนไว้ในตาราง `line_account_forward_urls`
 * **Headers:**
   * `x-line-signature`: ลายเซ็นดิจิตอลสำหรับยืนยันความถูกต้องของ Request
 

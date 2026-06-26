@@ -24,11 +24,17 @@ export async function POST(request: NextRequest) {
 
     const hashedKey = hashApiKey(authHeader);
 
-    const [keyRecord] = await db
+    // Start fetching key record and reading request body in parallel (async-parallel)
+    const keyPromise = db
       .select()
       .from(apiKeys)
       .where(eq(apiKeys.keyHash, hashedKey))
       .limit(1);
+
+    const bodyPromise = request.json();
+
+    const [keyRecords, body] = await Promise.all([keyPromise, bodyPromise]);
+    const keyRecord = keyRecords[0];
 
     if (!keyRecord) {
       return Response.json({ error: "Unauthorized: Invalid API Key" }, { status: 401 });
@@ -40,7 +46,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Parse and validate body
-    const body = await request.json();
     const result = sendPayloadSchema.safeParse(body);
     if (!result.success) {
       return Response.json({ error: "Bad Request: Invalid payload schema", details: result.error.format() }, { status: 400 });
@@ -49,8 +54,8 @@ export async function POST(request: NextRequest) {
     const { lineAccountId, to, messages } = result.data;
     targetLineAccountId = lineAccountId;
 
-    // 3. Verify access control mapping (API Key must have access to LINE Account)
-    const [authMapping] = await db
+    // 3. Verify access control and fetch LINE Account credentials in parallel (async-parallel)
+    const mappingPromise = db
       .select()
       .from(apiKeyLineAccounts)
       .where(
@@ -60,6 +65,14 @@ export async function POST(request: NextRequest) {
         )
       )
       .limit(1);
+
+    const accountPromise = db
+      .select()
+      .from(lineAccounts)
+      .where(eq(lineAccounts.id, targetLineAccountId))
+      .limit(1);
+
+    const [[authMapping], [account]] = await Promise.all([mappingPromise, accountPromise]);
 
     if (!authMapping) {
       // Log failed access attempt
@@ -73,12 +86,6 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Forbidden: API Key does not have access to this LINE Account" }, { status: 403 });
     }
 
-    // 4. Fetch target LINE Account credentials
-    const [account] = await db
-      .select()
-      .from(lineAccounts)
-      .where(eq(lineAccounts.id, targetLineAccountId))
-      .limit(1);
 
     if (!account) {
       return Response.json({ error: "Bad Request: LINE Account not found in system" }, { status: 400 });
