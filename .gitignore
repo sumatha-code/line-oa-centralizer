@@ -72,6 +72,9 @@ jspm_packages/
 # Next.js build output
 .next/
 
+# References
+docs/references/
+
 # Drizzle SQLite/local caches if any
 .drizzle/migrator.dest
 
