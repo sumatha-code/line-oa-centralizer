@@ -2,7 +2,7 @@
 
 ## Phase 1: Core Gateway, Multi-account & Admin Panel (Current)
 - [ ] สร้าง Docker Compose Environment (Next.js, Queue Worker, Postgres, Redis)
-- [ ] พัฒนา Data Models ด้วย Drizzle ORM (`line_accounts`, `admin_whitelist`, `users`, `groups`, `webhook_events`, `api_keys`, `usage_logs` และตารางสิทธิ์)
+- [x] พัฒนา Data Models ด้วย Drizzle ORM (`line_accounts`, `admin_whitelist`, `users`, `groups`, `webhook_events`, `api_keys`, `usage_logs` และตารางสิทธิ์)
 - [ ] พัฒนา Dynamic Webhook Endpoint `/api/webhooks/line/[accountId]` ดักจับ signature และรับข้อมูลลงคิว
 - [ ] พัฒนา Queue Worker (Async Consumer) ดึง Event จาก Redis และส่งต่อไปยัง Chatbot URL ของบัญชีนั้นๆ
 - [ ] พัฒนาหน้า Admin Panel รองรับ Google Login พร้อมตรวจสอบสิทธิ์จาก Whitelist
