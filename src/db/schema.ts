@@ -1,5 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, integer } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgTable, uuid, varchar, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
 
 // 1. LINE Accounts configuration
 export const lineAccounts = pgTable("line_accounts", {
@@ -24,16 +23,23 @@ export const adminWhitelist = pgTable("admin_whitelist", {
 });
 
 // 3. Mapping of Admins to LINE Accounts they can access
-export const adminLineAccounts = pgTable("admin_line_accounts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  adminId: uuid("admin_id")
-    .notNull()
-    .references(() => adminWhitelist.id, { onDelete: "cascade" }),
-  lineAccountId: uuid("line_account_id")
-    .notNull()
-    .references(() => lineAccounts.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const adminLineAccounts = pgTable(
+  "admin_line_accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    adminId: uuid("admin_id")
+      .notNull()
+      .references(() => adminWhitelist.id, { onDelete: "cascade" }),
+    lineAccountId: uuid("line_account_id")
+      .notNull()
+      .references(() => lineAccounts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    adminIdIdx: index("admin_line_accounts_admin_id_idx").on(table.adminId),
+    lineAccountIdIdx: index("admin_line_accounts_line_account_id_idx").on(table.lineAccountId),
+  })
+);
 
 // 4. LINE Users profile cache
 export const users = pgTable("users", {
@@ -55,14 +61,21 @@ export const groups = pgTable("groups", {
 });
 
 // 6. Webhook Events received (for deduplication and logging)
-export const webhookEvents = pgTable("webhook_events", {
-  webhookEventId: varchar("webhook_event_id", { length: 255 }).primaryKey(), // LINE event ID
-  lineAccountId: uuid("line_account_id")
-    .notNull()
-    .references(() => lineAccounts.id, { onDelete: "cascade" }),
-  eventType: varchar("event_type", { length: 100 }).notNull(), // message, follow, join, etc.
-  processedAt: timestamp("processed_at").defaultNow().notNull(),
-});
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    webhookEventId: varchar("webhook_event_id", { length: 255 }).primaryKey(), // LINE event ID
+    lineAccountId: uuid("line_account_id")
+      .notNull()
+      .references(() => lineAccounts.id, { onDelete: "cascade" }),
+    eventType: varchar("event_type", { length: 100 }).notNull(), // message, follow, join, etc.
+    processedAt: timestamp("processed_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    lineAccountIdIdx: index("webhook_events_line_account_id_idx").on(table.lineAccountId),
+    processedAtIdx: index("webhook_events_processed_at_idx").on(table.processedAt),
+  })
+);
 
 // 7. Sub-app API Keys
 export const apiKeys = pgTable("api_keys", {
@@ -74,26 +87,41 @@ export const apiKeys = pgTable("api_keys", {
 });
 
 // 8. Mapping of API Keys to LINE Accounts they are authorized to use
-export const apiKeyLineAccounts = pgTable("api_key_line_accounts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  apiKeyId: uuid("api_key_id")
-    .notNull()
-    .references(() => apiKeys.id, { onDelete: "cascade" }),
-  lineAccountId: uuid("line_account_id")
-    .notNull()
-    .references(() => lineAccounts.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const apiKeyLineAccounts = pgTable(
+  "api_key_line_accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    apiKeyId: uuid("api_key_id")
+      .notNull()
+      .references(() => apiKeys.id, { onDelete: "cascade" }),
+    lineAccountId: uuid("line_account_id")
+      .notNull()
+      .references(() => lineAccounts.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    apiKeyIdIdx: index("api_key_line_accounts_api_key_id_idx").on(table.apiKeyId),
+    lineAccountIdIdx: index("api_key_line_accounts_line_account_id_idx").on(table.lineAccountId),
+  })
+);
 
 // 9. API usage logs for monitoring
-export const usageLogs = pgTable("usage_logs", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  apiKeyId: uuid("api_key_id")
-    .notNull()
-    .references(() => apiKeys.id, { onDelete: "cascade" }),
-  lineAccountId: uuid("line_account_id")
-    .references(() => lineAccounts.id, { onDelete: "cascade" }),
-  endpoint: varchar("endpoint", { length: 255 }).notNull(),
-  statusCode: integer("status_code").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const usageLogs = pgTable(
+  "usage_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    apiKeyId: uuid("api_key_id")
+      .notNull()
+      .references(() => apiKeys.id, { onDelete: "cascade" }),
+    lineAccountId: uuid("line_account_id")
+      .references(() => lineAccounts.id, { onDelete: "cascade" }),
+    endpoint: varchar("endpoint", { length: 255 }).notNull(),
+    statusCode: integer("status_code").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    apiKeyIdIdx: index("usage_logs_api_key_id_idx").on(table.apiKeyId),
+    lineAccountIdIdx: index("usage_logs_line_account_id_idx").on(table.lineAccountId),
+    createdAtIdx: index("usage_logs_created_at_idx").on(table.createdAt),
+  })
+);
