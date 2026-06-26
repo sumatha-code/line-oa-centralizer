@@ -82,6 +82,25 @@ cp .env.example .env
 * `NEXTAUTH_SECRET`: คีย์สุ่มความปลอดภัยของ NextAuth
 * `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: สำหรับระบบ Google OAuth Authentication
 
+### 💡 การตั้งค่า Google OAuth (Google Cloud Console)
+ในการเข้าใช้งานระบบ Admin Panel ผู้ใช้งานที่จะนำโปรเจกต์นี้ไปติดตั้งใหม่ จะต้องสร้าง OAuth Client Credentials จาก Google Cloud Console ตามขั้นตอนดังนี้:
+
+1. เข้าไปที่ [Google Cloud Console](https://console.cloud.google.com/) -> สร้างโครงการใหม่ (New Project)
+2. ตั้งค่าหน้า **OAuth consent screen** เลือกประเภทผู้ใช้ตามต้องการ (เช่น **Internal** หากต้องการระบุเฉพาะอีเมลองค์กร หรือ **External** หากต้องการให้อีเมล Google ทั่วไปล็อกอินได้)
+3. ไปที่เมนู **Credentials** -> คลิกปุ่ม **Create Credentials** -> เลือก **OAuth client ID**
+4. เลือกประเภท Application Type เป็น **Web application**
+5. ในส่วน **Authorized JavaScript origins** ให้ระบุโดเมนหลักของระบบ:
+   - ทดสอบในเครื่อง (Local Dev): `http://localhost:3000`
+   - ใช้งานจริง (Production): `https://line-api.yourdomain.com`
+6. ในส่วน **Authorized redirect URIs** ให้ระบุลิงก์ Callback สำหรับ NextAuth (มีรูปแบบลงท้ายด้วย `/api/auth/callback/google` เสมอ):
+   - ทดสอบในเครื่อง (Local Dev): `http://localhost:3000/api/auth/callback/google`
+   - ใช้งานจริง (Production): `https://line-api.yourdomain.com/api/auth/callback/google`
+7. บันทึกและคัดลอกค่า `Client ID` และ `Client Secret` ไปกรอกลงในไฟล์ `.env` ของท่าน
+8. **ข้อควรระวังสำหรับการรันจริง (Production):** 
+   - ต้องกำหนดตัวแปร `NEXTAUTH_URL` ในไฟล์ `.env` ให้ชี้ไปยัง Domain หลักที่ใช้งานจริง (เช่น `https://line-api.yourdomain.com`)
+   - หากระบบทำงานอยู่หลัง Reverse Proxy (เช่น Cloudflare Tunnel, Nginx) ให้กำหนด `TRUST_HOST=true` เพื่อขจัดปัญหา Google OAuth Redirect URI Mismatch จาก Proxy Headers
+
+
 ### 2. การสร้างและอพยพฐานข้อมูล (Database Migrations)
 ใช้ Drizzle Kit เพื่อสร้างและรันสคีมาฐานข้อมูล:
 ```bash
