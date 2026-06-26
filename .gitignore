@@ -88,3 +88,6 @@ docs/references/
 *.sw?
 .DS_Store
 Thumbs.db
+
+# AI Agents Config
+.agents/
