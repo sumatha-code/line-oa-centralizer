@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE API EDUC Center - Architecture Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        line: { DEFAULT: '#06C755', hover: '#05a948' },
+                        educ: { DEFAULT: '#002244', light: '#003366' },
+                        dark: { bg: '#141414', card: '#1f1f1f', border: '#333' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Mermaid.js for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            flowchart: { curve: 'basis' }
+        });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .glass-card { background: rgba(31, 31, 31, 0.7); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-200 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+        
+        <!-- Header Section -->
+        <header class="border-b border-dark-border pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-full bg-line flex items-center justify-center text-white text-sm">LINE</span>
+                    API EDUC Center
+                </h1>
+                <p class="text-gray-400 mt-2 text-lg">ระบบจัดการ Webhook และ API ส่วนกลาง คณะศึกษาศาสตร์ มหาวิทยาลัยศิลปากร</p>
+            </div>
+            <div class="flex gap-2">
+                <span class="px-3 py-1 bg-educ text-white text-sm rounded-full border border-educ-light">Phase 1: Multi-Account Gateway</span>
+                <span class="px-3 py-1 bg-dark-card text-gray-300 text-sm rounded-full border border-dark-border">4 Containers (Docker Compose)</span>
+            </div>
+        </header>
+
+        <!-- Executive Summary -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-card p-6 rounded-xl border border-dark-border col-span-2">
+                <h2 class="text-xl font-semibold text-white mb-3">🎯 เป้าหมายของระบบ</h2>
+                <p class="text-gray-300 leading-relaxed">
+                    ทลายข้อจำกัดของ LINE OA ที่กำหนด Webhook ได้เพียง 1 URL โดยสร้าง <span class="text-line font-medium">Gateway กลางแบบ Multi-Account</span> เพื่อรับ Webhook จาก LINE OA หลายๆ บัญชีพร้อมกัน ผ่าน Dynamic Route จากนั้นทำการจัดคิว (Queue) ลง Redis และส่งต่อ (Forward) ไปยัง Chatbot หรือระบบปลายทางของแต่ละบัญชีตามที่ตั้งค่าไว้ พร้อมระงับ/อนุมัติสิทธิ์การใช้งาน API (API Key) และจัดสรรสิทธิ์ผู้ดูแลระบบย่อย (Admin Whitelist) แยกรายบัญชีได้
+                </p>
+            </div>
+            <div class="glass-card p-6 rounded-xl border border-dark-border">
+                <h2 class="text-xl font-semibold text-white mb-3">🛠️ Tech Stack & Services</h2>
+                <ul class="space-y-2 text-sm text-gray-300">
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-400"></span> <b>Web Service:</b> Next.js (TypeScript)</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-400"></span> <b>Queue Worker:</b> Node/TS Background Service</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-600"></span> <b>Database:</b> PostgreSQL + Drizzle ORM</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> <b>Queue/Broker:</b> Redis</li>
+                    <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> <b>Auth:</b> Google Login (Auth.js)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Simulation / Flow Diagram -->
+        <section class="glass-card p-6 rounded-xl border border-dark-border">
+            <h2 class="text-xl font-semibold text-white mb-4">🔄 Simulation: สถาปัตยกรรมการทำงาน (Webhook Flow)</h2>
+            <div class="bg-[#1a1a1a] p-4 rounded-lg overflow-x-auto">
+                <div class="mermaid text-center">
+                    graph TD
+                        %% Define Nodes
+                        User((User))
+                        LINE[LINE Messaging API]
+                        Gateway{EDUC Webhook Gateway<br/>/api/webhooks/line/:accountId}
+                        DB[(PostgreSQL DB)]
+                        Queue[(Redis Queue)]
+                        Worker[Queue Worker<br/>Container]
+                        Chatbot[ระบบ Chatbot ปลายทาง<br/>ของบัญชีนั้นๆ]
+
+                        %% User to LINE
+                        User -->|พิมพ์ข้อความ| LINE
+                        LINE -->|1. HTTP POST Webhook| Gateway
+
+                        %% Gateway Logic
+                        Gateway -->|2. ดึง Channel Secret &<br/>เช็ค Event ซ้ำ| DB
+                        Gateway -->|3. เอาลงคิว| Queue
+                        Gateway -.->|4. ตอบ 200 OK ทันที<br/>ภายใน 2 วินาที| LINE
+
+                        %% Worker Logic
+                        Queue -->|5. ดึงข้อมูล| Worker
+                        Worker -->|6. ดึง webhookForwardUrl| DB
+                        Worker -->|7. ส่งต่อ Webhook Payload| Chatbot
+
+                        %% Chatbot Reply
+                        Chatbot -->|8. ยิงข้อความกลับ<br/>แนบ API Key + lineAccountId| Gateway2[Internal API Endpoint<br/>/api/internal/messages/send]
+                        Gateway2 -->|9. ตรวจสิทธิ์ API Key &<br/>บันทึก Usage Log| DB
+                        Gateway2 -->|10. Reply / Push Message| LINE
+                        LINE -.->|ข้อความตอบกลับ| User
+
+                        %% Styling
+                        style User fill:#002244,stroke:#fff,stroke-width:2px,color:#fff
+                        style LINE fill:#06C755,stroke:#fff,stroke-width:2px,color:#fff
+                        style Gateway fill:#1f1f1f,stroke:#06C755,stroke-width:2px,color:#fff
+                        style Gateway2 fill:#1f1f1f,stroke:#06C755,stroke-width:2px,color:#fff
+                        style DB fill:#336791,stroke:#fff,stroke-width:2px,color:#fff
+                        style Queue fill:#dc382d,stroke:#fff,stroke-width:2px,color:#fff
+                        style Worker fill:#f97316,stroke:#fff,stroke-width:2px,color:#fff
+                        style Chatbot fill:#666,stroke:#fff,stroke-width:2px,color:#fff
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-400">
+                * แผนภาพแสดงสถาปัตยกรรมที่อัปเดตใหม่: รองรับการรับข้อความจาก Dynamic URL ตามบัญชี LINE OA, บันทึกข้อมูลและจัดคิวลง Redis, โดยมี Worker แยกตู้คอนเทนเนอร์คอยส่งต่อตามประวัติการลงทะเบียนของแต่ละบัญชี
+            </div>
+        </section>
+
+        <!-- Technical Decisions (ADR) -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass-card p-6 rounded-xl border border-dark-border">
+                <h2 class="text-xl font-semibold text-white mb-4">⚖️ การตัดสินใจทางเทคนิค (Decisions)</h2>
+                <ul class="space-y-4 text-gray-300">
+                    <li class="border-l-4 border-line pl-3">
+                        <strong class="text-white block">1. Multi-account LINE Support</strong>
+                        <span class="text-sm text-gray-400">จัดเก็บรายละเอียดบัญชี LINE OA (ID, Secret, Tokens) ไว้ใน Database เพื่อรองรับบอทหลายตัวพร้อมกันโดยไม่มีขีดจำกัด</span>
+                    </li>
+                    <li class="border-l-4 border-line pl-3">
+                        <strong class="text-white block">2. Hybrid Admin Whitelist (Fine-grained)</strong>
+                        <span class="text-sm text-gray-400">มี Super Admin คุมระบบ และสามารถเชิญผู้ดูแลระบบย่อยในตาราง whitelist พร้อมจำกัดสิทธิ์ให้เข้าถึงหน้าจอจัดการได้เฉพาะบางบัญชี LINE OA เท่านั้น</span>
+                    </li>
+                    <li class="border-l-4 border-line pl-3">
+                        <strong class="text-white block">3. Redis Queue & Separate Worker Process</strong>
+                        <span class="text-sm text-gray-400">เลี่ยงข้อจำกัด Webhook 2 วินาที ด้วยการเก็บลงคิวทันที และย้ายตัววิเคราะห์ประมวลผลไปทำใน Worker Container แยกเพื่อความนิ่งสูงสุด</span>
+                    </li>
+                    <li class="border-l-4 border-line pl-3">
+                        <strong class="text-white block">4. API Key Access Scoping</strong>
+                        <span class="text-sm text-gray-400">แอปย่อยที่เรียกใช้ช่องทางส่งข้อความส่วนกลาง จะต้องแนบ API Key ที่ได้รับสิทธิ์เชื่อมโยงกับ LINE Account นั้นๆ เท่านั้น ป้องกันการสวมรอยส่งข้อความข้ามระบบ</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Database Schema Visual -->
+            <div class="glass-card p-6 rounded-xl border border-dark-border">
+                <h2 class="text-xl font-semibold text-white mb-4">🗄️ โครงสร้างฐานข้อมูลหลัก</h2>
+                <div class="space-y-3">
+                    <div class="bg-dark-bg p-3 rounded border border-dark-border flex gap-4">
+                        <div class="flex-1">
+                            <div class="font-mono text-sm text-green-400 font-semibold mb-1">line_accounts</div>
+                            <div class="text-xs text-gray-400">เก็บ credentials บัญชี LINE OA และ URL ส่งต่อบอทย่อย</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-mono text-sm text-yellow-400 font-semibold mb-1">admin_whitelist</div>
+                            <div class="text-xs text-gray-400">เก็บอีเมลแอดมินย่อย และตารางสิทธิ์เชื่อมกับ line_accounts</div>
+                        </div>
+                    </div>
+                    <div class="bg-dark-bg p-3 rounded border border-dark-border flex gap-4">
+                        <div class="flex-1">
+                            <div class="font-mono text-sm text-purple-400 font-semibold mb-1">api_keys</div>
+                            <div class="text-xs text-gray-400">เก็บ Hashed API Key และสิทธิ์เชื่อมกับ line_accounts</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-mono text-sm text-purple-400 font-semibold mb-1">usage_logs</div>
+                            <div class="text-xs text-gray-400">ประวัติการใช้ API (ส่งหา LINE Account ไหน, สถานะใด)</div>
+                        </div>
+                    </div>
+                    <div class="bg-dark-bg p-3 rounded border border-dark-border flex gap-4">
+                        <div class="flex-1">
+                            <div class="font-mono text-sm text-blue-400 font-semibold mb-1">users / groups</div>
+                            <div class="text-xs text-gray-400">โปรไฟล์ผู้ใช้และกลุ่ม LINE ที่เข้ามาใช้งานบอทของระบบ</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-mono text-sm text-red-400 font-semibold mb-1">webhook_events</div>
+                            <div class="text-xs text-gray-400">เก็บ ID Webhook ป้องกันการทำงานซ้ำซ้อนจาก LINE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-sm text-gray-500 pt-6 pb-12 border-t border-dark-border">
+            &copy; 2026 LINE API EDUC Center Project - คณะศึกษาศาสตร์ มหาวิทยาลัยศิลปากร
+        </footer>
+    </div>
+</body>
+</html>
