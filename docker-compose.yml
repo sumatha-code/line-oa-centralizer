@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: educ_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-educ_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-P@ssw0rd_EducL1ne_2026_xYz!#}
+      POSTGRES_DB: ${POSTGRES_DB:-line_gateway}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: educ_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: educ_web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SUPER_ADMIN_EMAILS: ${SUPER_ADMIN_EMAILS}
+      EDUC_HUB_MASTER_TOKEN: ${EDUC_HUB_MASTER_TOKEN}
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: educ_worker
+    restart: always
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      EDUC_HUB_MASTER_TOKEN: ${EDUC_HUB_MASTER_TOKEN}
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
