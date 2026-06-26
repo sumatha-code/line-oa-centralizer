@@ -128,6 +128,14 @@ docker compose up -d --build --scale worker=4
 
 ---
 
+## 👥 Contributors
+
+* **Sumatha Panpring** ([@sumatha-code](https://github.com/sumatha-code)) - Project Owner & Lead Developer
+* **Antigravity** (AI Coding Assistant by Google DeepMind) - Core Pair Programmer
+
+---
+
 ## 📄 License
 
 โปรเจกต์นี้เปิดใช้งานเผยแพร่ภายใต้สัญญาอนุญาต **MIT License** สามารถนำไปดัดแปลง ใช้งาน และแจกจ่ายต่อได้ฟรีทั้งในรูปแบบส่วนตัวและเชิงพาณิชย์ (ดูรายละเอียดเพิ่มเติมในไฟล์ [LICENSE](file:///d:/Project/Line%20API%20EDUC%20Center/LICENSE))
+
