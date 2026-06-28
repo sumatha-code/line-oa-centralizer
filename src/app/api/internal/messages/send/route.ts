@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { apiKeys, apiKeyLineAccounts, lineAccounts, usageLogs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { hashApiKey } from "@/lib/hash";
+import { saveBase64File } from "@/lib/file-utils";
 
 const sendPayloadSchema = z.object({
   lineAccountId: z.string().uuid(),
@@ -95,6 +96,64 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Forbidden: LINE Account is suspended" }, { status: 403 });
     }
 
+    // 4. Preprocess messages to handle base64 staging
+    const origin = request.nextUrl.origin;
+    const processedMessages = [];
+
+    for (const msg of messages) {
+      const newMsg = { ...msg };
+
+      if (newMsg.type === "image") {
+        if (typeof newMsg.originalContentBase64 === "string") {
+          const { fileName } = await saveBase64File(newMsg.originalContentBase64);
+          newMsg.originalContentUrl = `${origin}/api/files/${fileName}`;
+          delete newMsg.originalContentBase64;
+        }
+        if (typeof newMsg.previewImageBase64 === "string") {
+          const { fileName } = await saveBase64File(newMsg.previewImageBase64);
+          newMsg.previewImageUrl = `${origin}/api/files/${fileName}`;
+          delete newMsg.previewImageBase64;
+        } else if (!newMsg.previewImageUrl && newMsg.originalContentUrl) {
+          // Fallback: If preview image URL is missing but we generated the original, reuse it
+          newMsg.previewImageUrl = newMsg.originalContentUrl;
+        }
+      } else if (newMsg.type === "video") {
+        if (typeof newMsg.originalContentBase64 === "string") {
+          const { fileName } = await saveBase64File(newMsg.originalContentBase64);
+          newMsg.originalContentUrl = `${origin}/api/files/${fileName}`;
+          delete newMsg.originalContentBase64;
+        }
+        if (typeof newMsg.previewImageBase64 === "string") {
+          const { fileName } = await saveBase64File(newMsg.previewImageBase64);
+          newMsg.previewImageUrl = `${origin}/api/files/${fileName}`;
+          delete newMsg.previewImageBase64;
+        }
+      } else if (newMsg.type === "audio") {
+        if (typeof newMsg.originalContentBase64 === "string") {
+          const { fileName } = await saveBase64File(newMsg.originalContentBase64);
+          newMsg.originalContentUrl = `${origin}/api/files/${fileName}`;
+          delete newMsg.originalContentBase64;
+        }
+      } else if (newMsg.type === "file") {
+        if (typeof newMsg.originalContentBase64 === "string") {
+          const { fileName, fileSize } = await saveBase64File(
+            newMsg.originalContentBase64,
+            typeof newMsg.fileExtension === "string" ? newMsg.fileExtension : undefined
+          );
+          newMsg.originalContentUrl = `${origin}/api/files/${fileName}`;
+          newMsg.fileSize = fileSize;
+          delete newMsg.originalContentBase64;
+          delete newMsg.fileExtension;
+
+          if (!newMsg.fileName) {
+            newMsg.fileName = `file_${Date.now()}`;
+          }
+        }
+      }
+
+      processedMessages.push(newMsg);
+    }
+
     // 5. Send message to LINE Messaging API
     const lineResponse = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
@@ -104,7 +163,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         to,
-        messages,
+        messages: processedMessages,
       }),
     });
 

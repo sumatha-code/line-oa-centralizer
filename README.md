@@ -126,12 +126,12 @@ docker compose up -d --build --scale worker=4
 * **ลักษณะการใช้งาน:** นำไปกรอกลงในช่อง Webhook URL ของ LINE Developers บัญชี LINE OA นั้น ๆ
 * **การส่งต่อ:** Payload จะถูกยืนยันลายเซ็น (Signature Verification) แล้วส่งต่อแบบขนานไปยังปลายทางที่ตั้งค่าไว้ในตาราง `line_account_forward_urls`
 
-### 2. Sub-App Push Message Gateway
+### 2. Sub-App Push Message Gateway (ส่งข้อความ)
 * **Endpoint:** `POST /api/internal/messages/send`
 * **Headers:**
   - `Content-Type: application/json`
   - `X-EDUC-Hub-Token: <YOUR_API_KEY_TOKEN>`
-* **Request Body:**
+* **Request Body (กรณีส่งข้อความทั่วไป):**
   ```json
   {
     "lineAccountId": "UUID-of-LINE-Account",
@@ -139,11 +139,54 @@ docker compose up -d --build --scale worker=4
     "messages": [
       {
         "type": "text",
-        "text": "ข้อความส่งจากระบบย่อย"
+        "text": "ข้อความทั่วไป"
       }
     ]
   }
   ```
+
+* **การส่งข้อความประเภทไฟล์/สื่อแบบ Base64 (ไม่ต้องใช้ Public URL):**
+  หากแอปพลิเคชันย่อยไม่มี Public URL ของไฟล์ภาพหรือมีเดียอื่นๆ สามารถแปลงไฟล์เป็น Base64 (รวมถึง Data URL เช่น `data:image/png;base64,...`) แล้วระบุเข้าไปในข้อความแทนได้ ระบบ Gateway จะทำการถอดรหัส บันทึก และสร้าง URL สาธารณะชั่วคราวให้อัตโนมัติ:
+
+  1. **ข้อความรูปภาพ (Image Message):**
+     ```json
+     {
+       "type": "image",
+       "originalContentBase64": "data:image/jpeg;base64,...",
+       "previewImageBase64": "data:image/jpeg;base64,..." // เลือกใส่หรือไม่ก็ได้ (ถ้าไม่ใส่จะใช้ภาพต้นฉบับแทน)
+     }
+     ```
+
+  2. **ข้อความวิดีโอ (Video Message):**
+     ```json
+     {
+       "type": "video",
+       "originalContentBase64": "data:video/mp4;base64,...",
+       "previewImageBase64": "data:image/jpeg;base64,..." // บังคับใส่ภาพหน้าปกสำหรับวิดีโอ
+     }
+     ```
+
+  3. **ข้อความเสียง (Audio Message):**
+     ```json
+     {
+       "type": "audio",
+       "originalContentBase64": "data:audio/mp3;base64,..."
+     }
+     ```
+
+  4. **ข้อความไฟล์เอกสาร (File Message):**
+     ระบบจะประมวลผลขนาดของไฟล์ (`fileSize`) ให้เองโดยอัตโนมัติจากขนาดของ Base64:
+     ```json
+     {
+       "type": "file",
+       "originalContentBase64": "JVBERi0xLjQKJ...", // หรือ Data URL ของไฟล์ PDF, Word, Zip ฯลฯ
+       "fileExtension": "pdf", // บังคับระบุเพื่อกำหนดส่วนขยายไฟล์ (หากไม่ผ่าน Data URL)
+       "fileName": "document_name.pdf" // ระบุชื่อไฟล์ปลายทางที่จะแสดงในแอป LINE
+     }
+     ```
+
+  > [!NOTE]
+  > ไฟล์เหล่านี้จะถูกเก็บพักไว้บนเซิร์ฟเวอร์ชั่วคราวเพื่อให้ทาง LINE ดาวน์โหลดไปส่งต่อให้กับผู้ใช้งาน โดยระบบจะทำความสะอาดลบไฟล์เก่าทิ้งโดยอัตโนมัติทันทีที่โฟลเดอร์มีขนาดสะสมเกินระดับที่กำหนดไว้ (ดูตัวแปร `MAX_TEMP_DIR_SIZE_MB`)
 
 ---
 
