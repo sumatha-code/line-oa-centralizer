@@ -327,6 +327,53 @@ export default function ApiKeysPage() {
                   ),
                 },
                 {
+                  key: "base64_send",
+                  label: "ส่งไฟล์/ภาพ (Base64)",
+                  children: (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-zinc-400 text-xs mb-1">1. ตัวอย่าง Payload สำหรับส่งรูปภาพ (Image Message):</div>
+                        <pre className="bg-zinc-900 p-4 rounded text-gray-300 font-mono text-xs overflow-x-auto select-all leading-relaxed whitespace-pre-wrap font-semibold">
+{`curl -X POST https://${apiHost}/api/internal/messages/send \\
+  -H "Content-Type: application/json" \\
+  -H "X-EDUC-Hub-Token: YOUR_API_KEY" \\
+  -d '{
+    "lineAccountId": "System UUID ของ LINE Account",
+    "to": "LINE_USER_ID_ผู้รับ",
+    "messages": [
+      {
+        "type": "image",
+        "originalContentBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...", // สตริง Base64 หรือ Data URL ของรูปหลัก
+        "previewImageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..." // รูปพรีวิวเล็ก (หากไม่ระบุจะดึงจากรูปหลักแทน)
+      }
+    ]
+  }'`}
+                        </pre>
+                      </div>
+                      <div>
+                        <div className="text-zinc-400 text-xs mb-1">2. ตัวอย่าง Payload สำหรับส่งเอกสาร/ไฟล์ทั่วไป (File Message):</div>
+                        <pre className="bg-zinc-900 p-4 rounded text-gray-300 font-mono text-xs overflow-x-auto select-all leading-relaxed whitespace-pre-wrap">
+{`curl -X POST https://${apiHost}/api/internal/messages/send \\
+  -H "Content-Type: application/json" \\
+  -H "X-EDUC-Hub-Token: YOUR_API_KEY" \\
+  -d '{
+    "lineAccountId": "System UUID ของ LINE Account",
+    "to": "LINE_USER_ID_ผู้รับ",
+    "messages": [
+      {
+        "type": "file",
+        "originalContentBase64": "JVBERi0xLjQKJ...", // สตริง Base64 หรือ Data URL ของไฟล์เอกสาร
+        "fileExtension": "pdf", // บังคับระบุเพื่อกำหนดนามสกุลไฟล์ปลายทาง
+        "fileName": "รายงานยอดการใช้งาน.pdf" // ชื่อไฟล์ที่แสดงใน LINE Chat
+      }
+    ]
+  }'`}
+                        </pre>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
                   key: "nodejs",
                   label: "Node.js (Fetch)",
                   children: (
